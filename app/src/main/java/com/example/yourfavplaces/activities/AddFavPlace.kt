@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
+import android.location.LocationManager
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -66,8 +67,7 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
         }
 
         if (intent.hasExtra(MainActivity.DETAILS)) {
-            mYourPlaceDetails =
-                intent.getSerializableExtra(MainActivity.DETAILS) as YourFavPlaceModule
+            mYourPlaceDetails = intent.getSerializableExtra(MainActivity.DETAILS) as YourFavPlaceModule
         }
 
         dateSetListener = DatePickerDialog.OnDateSetListener { view, year, month, dayOfMonth ->
@@ -102,7 +102,10 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
         btn_save.setOnClickListener(this)
 
         et_location.setOnClickListener(this)
+
+        tv_select_current_location.setOnClickListener(this)
     }
+
 
     override fun onClick(v: View?) {
         when (v!!.id) {
@@ -127,6 +130,49 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
                     }
                 }
                 pickerDialog.show()
+            }
+
+            R.id.et_location -> {
+                try {
+
+                    val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
+
+                    val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields).build(this@AddFavPlace)
+                    startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE)
+
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+            }
+
+            R.id.tv_select_current_location -> {
+                if(!isLocationPermissionEnabled()) {
+                    Toast.makeText(this@AddFavPlace, "The location permissions are disabled, change it in order to proceed", Toast.LENGTH_LONG).show()
+
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    startActivity(intent)
+                } else {
+                    Dexter.withContext(this).withPermissions(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ).withListener(object : MultiplePermissionsListener {
+                        override fun onPermissionsChecked(report: MultiplePermissionsReport?) {
+                            if (report!!.areAllPermissionsGranted()) {
+                                Toast.makeText(
+                                    this@AddFavPlace,
+                                    "Location permission is granted. Now you can request for a current location.",
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        override fun onPermissionRationaleShouldBeShown(
+                            permissions: MutableList<PermissionRequest>?,
+                            token: PermissionToken?
+                        ) {
+                            showRationalDialog()
+                        }
+                    }).onSameThread().check()
+                }
             }
 
             R.id.btn_save -> {
@@ -177,9 +223,7 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
                             val updateYourFavPlace = dbHandler.updateYourFavPlace(yourFavPlaceModule)
                             if (updateYourFavPlace > 0) {
                                 setResult(Activity.RESULT_OK)
-                                Toast.makeText(this@AddFavPlace, "The place updated successfully",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                Toast.makeText(this@AddFavPlace, "The place updated successfully", Toast.LENGTH_LONG).show()
                                 finish()
 
                             }
@@ -188,18 +232,6 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
                 }
             }
 
-            R.id.et_location -> {
-                try {
-
-                    val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
-
-                    val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields).build(this@AddFavPlace)
-                    startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE)
-
-                }catch (e:Exception){
-                    e.printStackTrace()
-                }
-            }
         }
     }
 
@@ -264,7 +296,7 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
                 Manifest.permission.READ_MEDIA_IMAGES,
                 Manifest.permission.CAMERA
             ).withListener(object :
-                MultiplePermissionsListener { //To do -> sprawdzic później czy działa
+                MultiplePermissionsListener {
                 override fun onPermissionsChecked(report: MultiplePermissionsReport?) {
                     if (report!!.areAllPermissionsGranted()) {
                         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -321,6 +353,11 @@ class AddFavPlace : AppCompatActivity(), View.OnClickListener {
                 e.printStackTrace()
             }
             return Uri.parse(file.absolutePath)
+        }
+
+        private fun isLocationPermissionEnabled(): Boolean {
+        val locationManager: LocationManager = getSystemService(Context.LOCALE_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         }
 
         companion object {
