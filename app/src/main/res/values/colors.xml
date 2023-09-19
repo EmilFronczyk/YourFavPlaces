@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#56AB91</color>
+    <color name="colorPrimaryDark">#88D4AB</color>
+    <color name="colorAccent">#88D4AB</color>
+
+    <!-- 99E2B4 ** 88D4AB ** 78C6A3 ** 67B99A ** 56AB91 ** 469D89 ** 358F80 ** 248277 ** 14746F ** 036666 -->
+
+    <color name="primary_text_color">#212121</color>
+    <color name="secondary_text_color">#9AA2AF</color>
+    <color name="white_color">#FFFFFF</color>
+    <color name="button_background_color">#88D4AB</color>
+
+    <color name="circular_image_border_color">#757575</color>
+    <color name="item_your_place_description_text_color">#606060</color>
+
+    <color name="detail_screen_description_text_color">#757575</color>
+</resources>
